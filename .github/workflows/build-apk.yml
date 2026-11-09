@@ -1,56 +1,44 @@
-
-name: Build Fatzz APK
+name: Build fatzGPT APK
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'FatzzDark-Android-Source.zip'
+      - 'fatzGPT/fatzgpt_starter/**'
       - '.github/workflows/build-apk.yml'
-
-permissions:
-  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          gradle-version: '8.9'
+          channel: stable
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'platform-tools'
-          
-      - name: Install SDK
-        run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Generate Android project
+        working-directory: fatzGPT/fatzgpt_starter
+        run: flutter create . --platforms=android
 
-      - name: Extract project ZIP
-        run: |
-          unzip -q FatzzDark-Android-Source.zip -d source
+      - name: Install dependencies
+        working-directory: fatzGPT/fatzgpt_starter
+        run: flutter pub get
 
       - name: Build APK
-        run: |
-          gradle --no-daemon -p source/FatzzDark clean assembleDebug
+        working-directory: fatzGPT/fatzgpt_starter
+        run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Fatzz-Debug-APK
-          path: source/FatzzDark/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-          
+          name: fatzGPT-Android
+          path: fatzGPT/fatzgpt_starter/build/app/outputs/flutter-apk/app-release.apk
